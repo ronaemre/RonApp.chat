@@ -1,17 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Segment, Header, Icon, Comment, Form, Input, Button, Search } from "semantic-ui-react"
-import { useFirebase } from 'react-redux-firebase'
+import { isEmpty, isLoaded, useFirebase, useFirebaseConnect } from 'react-redux-firebase'
 import { useSelector } from 'react-redux'
+import Message from '../ChatPanel/Message'
 
-
-
+//2.44
 const ChatPanel = ({ currentChannel }) => {
+    useFirebaseConnect([
+        {
+            path: `/messages/${currentChannel.key}`,
+            storeAs: "channelMessages"
+        }
+    ])
     const firebase = useFirebase();
     const profile = useSelector(state => state.firebase.profile)
     const currentUserUid = useSelector(state => state.firebase.auth.uid)
+    const channelMessages = useSelector(state => state.firebase.ordered.channelMessages)
     const [searchTerm, setSearhTerm] = useState("");
     /*   const currentChannel = useSelector((state) => state.channels.currentChannel) */
     const [content, setContent] = useState("")
+
+    const fileInputRef = useRef(null);
+
+
+
+    const handleRefClick = () => {
+        fileInputRef.current.click()
+    }
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -64,6 +79,9 @@ const ChatPanel = ({ currentChannel }) => {
                         maxWidth: "100%"
                     }}
                 >
+                    {channelMessages && channelMessages.map(({ key, value }) => (
+                        <Message key={key} message={value} />
+                    ))}
                 </Comment.Group>
             </Segment>
             {/* send new message */}
@@ -75,8 +93,9 @@ const ChatPanel = ({ currentChannel }) => {
                     display: "flex"
                 }}
             >
-                <Button icon>
+                <Button icon onClick={handleRefClick}>
                     <Icon name="add" />
+                    <Input type="file" name="file" ref={fileInputRef} />
                 </Button>
 
                 <Form onSubmit={handleSubmit} style={{ flex: "1" }} >
